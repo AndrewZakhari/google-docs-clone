@@ -1,0 +1,59 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  password     String
+  name         String
+  createdAt    DateTime  @default(now())
+  
+  documents    Document[]
+  collaborations Collaboration[]
+}
+
+model Document {
+  id           String    @id @default(cuid())
+  title        String
+  content      String    @default("")
+  yjsState     Bytes?
+  ownerId      String
+  isPublic     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  owner        User      @relation(fields: [ownerId], references: [id])
+  collaborators Collaboration[]
+  versions     Version[]
+}
+
+model Collaboration {
+  id           String    @id @default(cuid())
+  userId       String
+  documentId   String
+  permission   String    @default("edit") // "view" | "edit"
+  createdAt    DateTime  @default(now())
+  
+  user         User      @relation(fields: [userId], references: [id])
+  document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, documentId])
+}
+
+model Version {
+  id           String    @id @default(cuid())
+  documentId   String
+  content      String
+  yjsState     Bytes?
+  createdAt    DateTime  @default(now())
+  createdBy   String
+  
+  document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+}
