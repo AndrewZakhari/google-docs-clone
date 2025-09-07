@@ -1,10 +1,11 @@
+// backend/src/websocket/socketHandler.ts
 import { Server, Socket } from "socket.io";
 import * as Y from "yjs";
 import { prisma } from "../index";
 import jwt from "jsonwebtoken";
 
 const documents = new Map<string, Y.Doc>();
-const documentRouter = new Map<string, Set<string>>();
+const documentRooms = new Map<string, Set<string>>(); 
 
 interface SocketData {
     userId: string;
@@ -28,7 +29,9 @@ export function setupWebSocket(io: Server) {
     });
 
     io.on("connection", (socket: Socket) => {
-        console.log('User connect:', async (documentId: string) => {
+        console.log('User connected:', socket.data.userId); 
+        
+        socket.on('join-document', async (documentId: string) => { 
             try {
                 const hasAccess = await checkDocumentAccess(
                     documentId,
@@ -64,7 +67,7 @@ export function setupWebSocket(io: Server) {
                 const state = Y.encodeStateAsUpdate(ydoc);
                 socket.emit("sync-update", state);
 
-                const users = Array.from(documentRooms.get(documentId!).map(socketId => {
+                const users = Array.from(documentRooms.get(documentId)!).map(socketId => { 
                     const s = io.sockets.sockets.get(socketId);
                     return s ? {
                         id: s.data.userId,
@@ -73,14 +76,13 @@ export function setupWebSocket(io: Server) {
                 }).filter(Boolean);
 
                 socket.emit('users-update', users);
-                socket.to(documentId).emit('user-joind', {
+                socket.to(documentId).emit('user-joined', { 
                     id: socket.data.userId,
                     email: socket.data.email
                 });
             } catch (err) {
                 console.error("Error joining document:", err);
                 socket.emit("error", {message: "Failed to join document"});
-
             }
         });
 
@@ -118,25 +120,25 @@ export function setupWebSocket(io: Server) {
             }
 
             socket.to(documentId).emit('user-left', {
-                io: socket.data.userId,
+                id: socket.data.userId, 
             });
         });
 
         socket.on('disconnect', () => {
-            documentRooms.forEach(users, documentId) => {
+            documentRooms.forEach((users, documentId) => { 
                 if(users.has(socket.id)) {
                     users.delete(socket.id);
                     socket.to(documentId).emit('user-left', {
                         id: socket.data.userId,
                     });
                 }
-            }
+            });
         });
-})
+    });
 }
 
 async function checkDocumentAccess(documentId: string, userId: string) {
-    const doc = await prisma.document.findUnique({
+    const doc = await prisma.document.findFirst({ 
         where: {
             id: documentId,
             OR: [

@@ -5,8 +5,8 @@ import { Server } from "socket.io";
 import dotenv from 'dotenv'; 
 import { PrismaClient } from "@prisma/client";
 import authRoutes from "./routes/auth";
-import documentRoutes from "./routes/document";
-import { setupWebSocket } from "./websocket/socketHandler';
+import documentRoutes from "./routes/documents";
+import { setupWebSocket } from "./websocket/socketHandler";
 
 dotenv.config();
 

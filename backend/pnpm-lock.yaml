@@ -23,9 +23,6 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
-      '@types/node':
-        specifier: ^24.3.0
-        version: 24.3.0
       bcryptjs:
         specifier: ^3.0.2
         version: 3.0.2
@@ -62,6 +59,10 @@ importers:
       yjs:
         specifier: ^13.6.27
         version: 13.6.27
+    devDependencies:
+      '@types/node':
+        specifier: ^24.3.0
+        version: 24.3.0
 
 packages:
 
